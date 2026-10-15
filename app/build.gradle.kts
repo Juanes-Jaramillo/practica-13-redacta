@@ -52,4 +52,8 @@ dependencies {
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
     debugImplementation(libs.androidx.ui.tooling)
+
+    // Pruebas locales (src/test): corren en la JVM de tu computadora, sin emulador ni modelo.
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
