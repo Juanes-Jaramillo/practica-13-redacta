@@ -20,6 +20,12 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import mx.tec.redacta.domain.EstadoModelo
 import mx.tec.redacta.domain.Pedido
+import com.google.ai.edge.litertlm.Content
+import com.google.ai.edge.litertlm.Contents
+import com.google.ai.edge.litertlm.ConversationConfig
+import com.google.ai.edge.litertlm.Message
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 
 /**
  * Gemma 3 1B, con LiteRT-LM, en el CPU del teléfono.
@@ -67,8 +73,25 @@ class GemmaLocal @Inject constructor(
             }
     }
 
-    // B1
-    override fun generar(pedido: Pedido): Flow<String> = emptyFlow()
+    override fun generar(pedido: Pedido): Flow<String> = flow {
+        val motor = checkNotNull(motor) { "El modelo todavía no está cargado" }
+        val config = ConversationConfig(
+            systemInstruction = pedido.instruccion?.let { Contents.of(it) },
+            maxOutputToken = MAX_TOKENS
+        )
+        // Una conversación por pedido: sin historia, cada texto se trata solo.
+        motor.createConversation(config).use { conversacion ->
+            try {
+                conversacion.sendMessageAsync(pedido.mensaje).collect { emit(it.texto()) }
+            } catch (e: CancellationException) {
+                conversacion.cancelProcess() // que el CPU deje de generar lo que ya nadie va a leer
+                throw e
+            }
+        }
+    }.flowOn(Dispatchers.Default)
+
+    private fun Message.texto(): String =
+        contents.contents.filterIsInstance<Content.Text>().joinToString("") { it.text }
 
     companion object {
         const val ARCHIVO = "gemma3-1b-it-int4.litertlm"
