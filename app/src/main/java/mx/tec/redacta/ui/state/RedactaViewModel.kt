@@ -15,6 +15,7 @@ import mx.tec.redacta.data.ModeloLocal
 import mx.tec.redacta.domain.Tarea
 import mx.tec.redacta.domain.limpiar
 import mx.tec.redacta.domain.tokensPorSegundo
+import mx.tec.redacta.domain.separarOpciones
 
 @HiltViewModel
 class RedactaViewModel @Inject constructor(
@@ -65,10 +66,15 @@ class RedactaViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 alResponder { it.copy(error = e.message ?: "El modelo no pudo contestar") }
+
             } finally {
                 // Terminó, falló o lo detuviste: en los tres casos deja de generar.
-                alResponder { r -> r.copy(texto = limpiar(r.texto), generando = false) }
+                alResponder { r ->
+                    val opciones = if (r.tarea == Tarea.Responder) separarOpciones(r.texto) else emptyList()
+                    r.copy(texto = limpiar(r.texto), generando = false, opciones = opciones)
+                }
             }
+
         }
     }
 
