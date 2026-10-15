@@ -32,6 +32,9 @@ android {
 }
 
 dependencies {
+    // LiteRT-LM: corre un modelo de lenguaje en el teléfono. Trae su motor nativo
+// (arm64 para teléfonos, x86_64 para el emulador); el modelo NO viene aquí.
+    implementation(libs.litertlm.android)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
